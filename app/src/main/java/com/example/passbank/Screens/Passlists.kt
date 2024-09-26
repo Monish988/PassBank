@@ -1,5 +1,8 @@
 package com.example.passbank.Screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -24,18 +28,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -100,10 +111,18 @@ fun Passitem(modifier: Modifier = Modifier,pass: Pass,onclick:()->Unit){
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Passlist(viewModel: PassBankViewModel,navController: NavController){
+    var search by remember {
+        mutableStateOf("")
+    }
+
     val data by viewModel.alldata.observeAsState(initial = emptyList())
+    var filtered = data.filter {
+        it.platform.contains(search, ignoreCase = true)
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
+
 
             .background(Color.Black)
     ) {
@@ -112,8 +131,49 @@ fun Passlist(viewModel: PassBankViewModel,navController: NavController){
         Topappbar(title = "Password List").also {
 
         }
+       if(data.isNotEmpty()){
+           TextField(value = search,
+               onValueChange = {search = it},
+               colors = TextFieldDefaults.colors(unfocusedContainerColor = Color.Transparent,
+                   focusedContainerColor = Color.Transparent,
+                   focusedTextColor = Color.White,
+                   unfocusedTextColor = Color.White,
+                   focusedIndicatorColor = Color.Green,
+                   unfocusedIndicatorColor = detaile1,
+                   cursorColor = detaile1
+               ), enabled =true,
+               label = { Text(text = "Search", color = Color.White)},
+               leadingIcon = {
+                   Icon(imageVector = Icons.Rounded.Search, contentDescription = null, tint = Color.White)
+               },
+               maxLines = 1,
+               trailingIcon = {
+                   AnimatedVisibility(visible = search.isNotEmpty(),
+                       enter = fadeIn(),
+                       exit = fadeOut()
+                   ) {
 
-        if (data.isEmpty()) {
+
+                       Icon(imageVector = Icons.Rounded.Cancel,
+                           contentDescription = null,
+                           tint = Color.White,
+                           modifier = Modifier.clickable {
+                               search = ""
+
+
+                           })
+                   }
+               },
+               modifier = Modifier
+                   .fillMaxWidth()
+                   .wrapContentHeight(Alignment.CenterVertically)
+                   .heightIn(10.dp)
+           )
+
+       }
+
+
+        if (filtered.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -132,6 +192,7 @@ fun Passlist(viewModel: PassBankViewModel,navController: NavController){
             }
 
         } else {
+
             LazyColumn(
                 contentPadding = PaddingValues(
                     start = 8.dp,
@@ -142,7 +203,7 @@ fun Passlist(viewModel: PassBankViewModel,navController: NavController){
 
                 ) {
 
-                items(data) { pass ->
+                items(filtered) { pass ->
                     Passitem(pass = pass) {
                         navController.navigate("passdetail/${pass.id}")
 
